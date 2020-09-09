@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<link href="login.css" rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet"> 
+	<title>Login</title>
+	
+	<script type="text/javascript">
+	function submitForm() {
+		var query = window.location.search;
+		let loginForm = document.getElementById('login-form');
+		loginForm.action = loginForm.action.concat(query);
+		console.log('Form action is <' + loginForm.action + '>');
+		console.log('Submitted form to server.');
+		loginForm.submit();
+	}
+	</script>
+</head>
+<body>
+
+	<div class="centered-dialog">
+		<form id="login-form" method="post" action="/authorization-server/public/api/login">
+			<div>
+				<label for="username" >Username</label>
+				<input id="username" name="username" type="text" />
+			</div>
+			<div>
+				<label for="password">Password</label>
+				<input id="password" name="password" type="password" />
+			</div>
+			
+			<div>
+    			<input type="button" value="login" onclick="submitForm()"/>
+  			</div>
+  		</form>
+	</div>
+	
+</body>
+</html>

@@ -1,0 +1,26 @@
+body {
+	font-family: 'Roboto', sans-serif;
+	font-size: 62.5%;
+}
+
+.centered-dialog {
+	font-size: 1.5em;
+	position: absolute;
+    height: 200px;
+    width: 400px;
+    margin: -100px 0 0 -200px;
+    top: 50%;
+    left: 50%;
+}
+
+.centered-dialog form div {
+	margin-top: 1em;
+}
+
+.centered-dialog form input {
+	padding: 0.5em;
+}
+
+.centered-dialog form label {
+	display: block;
+}
