@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import javax.naming.NamingException;
 
@@ -22,6 +23,8 @@ import authorizationserver.model.Client;
  */
 public class JdbcClientDataAccessObject extends AbstractJdbcDataAccessObject<Client, Long> {
 
+	private static final String TABLE_NAME = "Client";
+
 	/**
 	 * Describes the columns with its name, index to insert and index to select. If
 	 * the index to insert is -1 the column is not inserted manually.
@@ -29,19 +32,15 @@ public class JdbcClientDataAccessObject extends AbstractJdbcDataAccessObject<Cli
 	 * @author Philipp Buchohlz
 	 */
 	public enum Columns {
-	ID("id", 1, -1), //
-	EXTERNALCLIENTID("externalclientid", 2, 1), //
-	NAME("name", 3, 2), //
-	REDIRECTURL("redirecturl", 4, 3);
+		ID(new Column("id", 1, -1)), //
+		EXTERNALCLIENTID(new Column("externalclientid", 2, 1)), //
+		NAME(new Column("name", 3, 2)), //
+		REDIRECTURL(new Column("redirecturl", 4, 3));
 
-		private String column;
-		private int selectIndex;
-		private int insertIndex;
+		private Column column;
 
-		Columns(String column, int selectIndex, int insertIndex) {
+		Columns(Column column) {
 			this.column = column;
-			this.selectIndex = selectIndex;
-			this.insertIndex = insertIndex;
 		}
 	}
 
@@ -51,19 +50,20 @@ public class JdbcClientDataAccessObject extends AbstractJdbcDataAccessObject<Cli
 		assert 0 == id : "Id for client search cannot be null.";
 
 		try (Connection connection = DataSourceLookup.INSTANCE.getConnection(); //
-				PreparedStatement ps = connection.prepareStatement("//
-						+ "WHERE c.id = ?")) {
+				PreparedStatement ps = connection.prepareStatement(this.buildBaseFindStatement() //
+						.append(" WHERE c.id = ?") //
+						.toString())) {
 
-			ps.setLong(Columns.ID.selectIndex, id);
+			ps.setLong(Columns.ID.column.getSelectIndex(), id);
 			ResultSet resultSet = ps.executeQuery();
 
 			if (!resultSet.first()) {
 				return null;
 			}
 
-			return this.map(resultSet);
+			return this.mapRow(resultSet);
 
-		} catch (SQLException | NamingException | MalformedURLException e) {
+		} catch (SQLException | NamingException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -72,12 +72,12 @@ public class JdbcClientDataAccessObject extends AbstractJdbcDataAccessObject<Cli
 	protected Client mapRow(ResultSet resultSet) {
 		try {
 			Client.Builder builder = Client.builder() //
-					.id(resultSet.getLong(Columns.ID.column)) //
-					.externalClientId(UUID.fromString(resultSet.getString(Columns.EXTERNALCLIENTID.column))) //
-					.name(resultSet.getString(Columns.NAME.column));
+					.id(resultSet.getLong(Columns.ID.column.getName())) //
+					.externalClientId(UUID.fromString(resultSet.getString(Columns.EXTERNALCLIENTID.column.getName()))) //
+					.name(resultSet.getString(Columns.NAME.column.getName()));
 
 			while (resultSet.next()) {
-				builder.url(new URL(resultSet.getString(Columns.REDIRECTURL.column)));
+				builder.url(new URL(resultSet.getString(Columns.REDIRECTURL.column.getName())));
 			}
 
 			return builder.build();
@@ -95,7 +95,7 @@ public class JdbcClientDataAccessObject extends AbstractJdbcDataAccessObject<Cli
 							.prepareStatement("INSERT INTO redirecturls (clientid, redirectUrl) " //
 									+ "VALUES(?, ?)");) {
 				/* First insert client. */
-				insertClientPs.setString(Columns.NAME.insertIndex, client.getName());
+				insertClientPs.setString(Columns.NAME.column.getInsertIndex(), client.getName());
 				insertClientPs.executeUpdate();
 				ResultSet resultSet = insertClientPs.getGeneratedKeys();
 
@@ -104,8 +104,8 @@ public class JdbcClientDataAccessObject extends AbstractJdbcDataAccessObject<Cli
 				}
 
 				for (URL redirectUrl : client.getRegisteredRedirectUrls()) {
-					insertRedirectUrlsPs.setLong(Columns.ID.insertIndex, resultSet.getLong(0));
-					insertRedirectUrlsPs.setString(Columns.REDIRECTURL.insertIndex, redirectUrl.toString());
+					insertRedirectUrlsPs.setLong(Columns.ID.column.getInsertIndex(), resultSet.getLong(0));
+					insertRedirectUrlsPs.setString(Columns.REDIRECTURL.column.getInsertIndex(), redirectUrl.toString());
 					insertRedirectUrlsPs.executeUpdate();
 				}
 			}
@@ -128,11 +128,14 @@ public class JdbcClientDataAccessObject extends AbstractJdbcDataAccessObject<Cli
 	}
 
 	@Override
-	protected StringBuilder buildBaseFindStatement() {
-		return new StringBuilder() //
-				.append("SELECT id, externalid, name, redirecturl ") //
-				.append("FROM clients c ") //
-				.append("INNER JOIN redirecturls u ON c.id = u.clientid ");
+	protected Stream<Column> provideColumns() {
+		return Stream.of(Columns.values()) //
+				.map(c -> c.column);
+	}
+
+	@Override
+	protected String provideTableName() {
+		return TABLE_NAME;
 	}
 
 }

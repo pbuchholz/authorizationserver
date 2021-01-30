@@ -27,8 +27,9 @@ public class RequestParameterFactoryTest {
 		HttpServletRequest request = mock(HttpServletRequest.class);
 		when(request.getParameter(RequestParameters.RESPONSE_TYPE.parameterName())) //
 				.thenReturn(ResponseTypes.CODE.responseType());
-		Optional<String> parameter = RequestParameterExtractor.INSTANCE
-				.byNameFromRequest(RequestParameters.RESPONSE_TYPE.parameterName(), request);
+		RequestParameterExtractor rpe = RequestParameterExtractor.from(request);
+
+		Optional<String> parameter = rpe.getResponseType();
 
 		assertNotNull("RequestParameter for ResponseType is null.", parameter);
 		assertTrue("RequestParameter for ResponseType not available.", parameter.isPresent());

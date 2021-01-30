@@ -57,7 +57,7 @@ public class LoginEndpoint extends HttpServlet {
 		}
 	}
 
-	private boolean authenticate(HttpServletRequest request) {
+	private boolean authenticate(HttpServletRequest request) throws CouldNotVerfiyClientException {
 		assert null != request : "Request cannot be null.";
 
 		RequestParameterExtractor extractor = RequestParameterExtractor.from(request);

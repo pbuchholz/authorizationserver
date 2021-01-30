@@ -20,8 +20,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import authorizationserver.RequestParameterExtractor.RequestParameters;
 
-/**
- * {@link Filter} which ensures the current {@link ServletRequest} is
+/*
+ *{@link Filter} which ensures the current {@link ServletRequest} is
  * authenticated and the encrypted authentication {@link Cookie} has been set.
  * 
  * To encrypt authentication {@link Cookie}s a dynamic generated key is used.
@@ -66,11 +66,11 @@ public class AuthenticationFilter implements Filter {
 
 	private void redirectToLogin(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, UnsupportedEncodingException {
-		RequestParameterExtractor rpf = RequestParameterExtractor.INSTANCE;
+		RequestParameterExtractor rpe = RequestParameterExtractor.from(request);
 
-		String responseTypeParam = rpf.getResponseType(request).orElseThrow();
-		String redirectUri = rpf.getRedirectUri(request).orElseThrow();
-		String clientId = rpf.getClientId(request).orElseThrow();
+		String responseTypeParam = rpe.getResponseType().orElseThrow();
+		String redirectUri = rpe.getRedirectUri().orElseThrow();
+		String clientId = rpe.getClientId().orElseThrow();
 
 		response.sendRedirect(request.getServletContext().getContextPath() + //
 				Configuration.INSTANCE.getLoginEndpoint() + //
