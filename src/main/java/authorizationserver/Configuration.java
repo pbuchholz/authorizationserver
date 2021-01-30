@@ -6,6 +6,8 @@ import java.util.Properties;
 /**
  * Defines the {@link Configuration} of the AuthorizationServer.
  * 
+ * TODO: (PB) Abstract configuration to clear interface and provide implementations for static configuration (mostly used for tests) and for external configuratiton (on dev or prod)!
+ * 
  * @author Philipp Buchholz
  */
 public enum Configuration {

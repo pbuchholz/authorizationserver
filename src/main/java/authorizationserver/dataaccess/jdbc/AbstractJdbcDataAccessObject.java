@@ -4,17 +4,22 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Comparator;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 import javax.naming.NamingException;
 
 import authorizationserver.DataSourceLookup;
+import authorizationserver.StreamHelper;
 import authorizationserver.dataaccess.DataAccessCriteria;
 import authorizationserver.dataaccess.DataAccessCriteria.CriteriaLink;
 import authorizationserver.dataaccess.DataAccessObject;
 import authorizationserver.dataaccess.Interpreters;
 
 public abstract class AbstractJdbcDataAccessObject<T, I> implements DataAccessObject<T, I> {
+
+	protected final static String COLUMN_SEPARATOR = ",";
 
 	@Override
 	public T findOneByDataAccessCriteria(DataAccessCriteria dataAccessCriteria) {
@@ -55,6 +60,20 @@ public abstract class AbstractJdbcDataAccessObject<T, I> implements DataAccessOb
 	}
 
 	/**
+	 * Provides the name of the underlying database tabe.
+	 * 
+	 * @return
+	 */
+	protected abstract String provideTableName();
+
+	/**
+	 * Provides the {@link Stream} of {@link Column} to map.
+	 * 
+	 * @return
+	 */
+	protected abstract Stream<Column> provideColumns();
+
+	/**
 	 * Maps the current row of the passed in ResultSet to an instance of type T.
 	 * 
 	 * @param resultSet
@@ -62,6 +81,23 @@ public abstract class AbstractJdbcDataAccessObject<T, I> implements DataAccessOb
 	 */
 	protected abstract T mapRow(ResultSet resultSet);
 
-	protected abstract StringBuilder buildBaseFindStatement();
+	protected StringBuilder buildBaseFindStatement() {
+		StringBuilder baseFindStatement = new StringBuilder();
+		baseFindStatement.append("SELECT ");
+
+		Stream<Column> columnStream = this.provideColumns();
+
+		Stream.concat( //
+				columnStream.sorted(Comparator.comparingInt(c -> c.getSelectIndex())) //
+						.skip(StreamHelper.last(columnStream)) //
+						.map(c -> c.getName().concat(COLUMN_SEPARATOR)), //
+				columnStream.filter(c -> c.getSelectIndex() == StreamHelper.last(columnStream)) //
+						.map(Column::getName)) //
+				.forEach(c -> baseFindStatement.append(c));
+
+		baseFindStatement.append(" FROM ") //
+				.append(this.provideTableName());
+		return baseFindStatement;
+	}
 
 }

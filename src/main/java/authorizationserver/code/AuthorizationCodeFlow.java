@@ -18,12 +18,12 @@ import authorizationserver.model.AuthorizationCode;
  */
 public class AuthorizationCodeFlow {
 
-	private RequestParameterExtractor requestParameterFactory = RequestParameterExtractor.INSTANCE;
-
 	public void proceed(HttpServletRequest request, HttpServletResponse response) throws FlowExecutionException {
 		try {
-			ResponseTypes responseType = ResponseTypes
-					.fromResponseType(requestParameterFactory.getResponseType(request).orElseThrow());
+
+			RequestParameterExtractor rpf = RequestParameterExtractor.from(request);
+
+			ResponseTypes responseType = ResponseTypes.fromResponseType(rpf.getResponseType().orElseThrow());
 
 			ServletContext context = request.getServletContext();
 			CacheAccess cache = (CacheAccess) context.getAttribute(Configuration.AUTH_CACHE);
@@ -37,7 +37,7 @@ public class AuthorizationCodeFlow {
 				GenerateAndAssociateAuthorizationCode generateAndAssociateAuthorizationCode = new GenerateAndAssociateAuthorizationCode();
 				AuthorizationCode authorizationCode = generateAndAssociateAuthorizationCode.execute(cacheEntry);
 
-				String redirectUri = requestParameterFactory.getRedirectUri(request).orElseThrow();
+				String redirectUri = rpf.getRedirectUri().orElseThrow();
 				String authorizationCodeRedirect = new BuildAuthorizationCodeRedirect().execute(authorizationCode);
 				response.sendRedirect(redirectUri + authorizationCodeRedirect);
 
