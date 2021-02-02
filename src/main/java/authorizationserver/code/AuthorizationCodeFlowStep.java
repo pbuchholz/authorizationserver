@@ -11,7 +11,7 @@ import authorizationserver.model.AuthorizationCode;
  * 
  * @author Philipp Buchholz
  */
-public class GenerateAndAssociateAuthorizationCode implements FlowStep<AuthorizationCode, AuthenticationCacheEntry> {
+public class AuthorizationCodeFlowStep implements FlowStep<AuthorizationCode, AuthenticationCacheEntry> {
 
 	@Override
 	public AuthorizationCode execute(AuthenticationCacheEntry input) throws FlowExecutionException {

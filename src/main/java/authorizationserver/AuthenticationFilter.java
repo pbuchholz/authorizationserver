@@ -64,6 +64,14 @@ public class AuthenticationFilter implements Filter {
 
 	}
 
+	/**
+	 * Redirects the client to the login page.
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws IOException
+	 * @throws UnsupportedEncodingException
+	 */
 	private void redirectToLogin(HttpServletRequest request, HttpServletResponse response)
 			throws IOException, UnsupportedEncodingException {
 		RequestParameterExtractor rpe = RequestParameterExtractor.from(request);

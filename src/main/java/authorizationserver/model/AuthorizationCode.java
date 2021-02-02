@@ -1,9 +1,22 @@
 package authorizationserver.model;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+/**
+ * Represents the AuthorizationCode which is send to the client after sucessfull
+ * login. A valid AuthorizationCode can be exchanged against an AccessToken. An
+ * AuthorizationCode has restricted validity in a defined timespan.
+ * 
+ * @author Philipp Buchholz
+ */
 public class AuthorizationCode {
 
 	private String value;
 	private long createdMillis = System.currentTimeMillis();
+
+	// True if has been exchanged against an AccessToken.
+	private boolean exchanged;
 
 	public String getValue() {
 		return value;
@@ -17,34 +30,22 @@ public class AuthorizationCode {
 		return createdMillis;
 	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (int) (createdMillis ^ (createdMillis >>> 32));
-		result = prime * result + ((value == null) ? 0 : value.hashCode());
-		return result;
+	public boolean getExchanged() {
+		return this.exchanged;
+	}
+
+	public void setExchanged(boolean exchanged) {
+		this.exchanged = exchanged;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
-		if (obj == null)
-			return false;
-		if (getClass() != obj.getClass())
-			return false;
-		AuthorizationCode other = (AuthorizationCode) obj;
-		if (createdMillis != other.createdMillis)
-			return false;
-		if (value == null) {
-			if (other.value != null)
-				return false;
-		} else if (!value.equals(other.value))
-			return false;
-		return true;
+	public int hashCode() {
+		return HashCodeBuilder.reflectionHashCode(this, false);
 	}
-	
-	
+
+	@Override
+	public boolean equals(Object other) {
+		return EqualsBuilder.reflectionEquals(this, other, false);
+	}
 
 }

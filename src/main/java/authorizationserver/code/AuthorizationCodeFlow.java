@@ -34,19 +34,18 @@ public class AuthorizationCodeFlow {
 			case CODE:
 
 				/* Generate and associated new AuthorizationCode. */
-				GenerateAndAssociateAuthorizationCode generateAndAssociateAuthorizationCode = new GenerateAndAssociateAuthorizationCode();
-				AuthorizationCode authorizationCode = generateAndAssociateAuthorizationCode.execute(cacheEntry);
+				AuthorizationCodeFlowStep authorizationCodeFs = new AuthorizationCodeFlowStep();
+				AuthorizationCode authorizationCode = authorizationCodeFs.execute(cacheEntry);
 
 				String redirectUri = rpf.getRedirectUri().orElseThrow();
 				String authorizationCodeRedirect = new BuildAuthorizationCodeRedirect().execute(authorizationCode);
 				response.sendRedirect(redirectUri + authorizationCodeRedirect);
-
-				return;
+				break;
 			case TOKEN:
 				/* Validate incoming AuthorizationCode and state. */
 
 				/* Generate and return new AccessToken. */
-				return;
+				break;
 			}
 		} catch (Exception e) {
 			throw new FlowExecutionException(e);

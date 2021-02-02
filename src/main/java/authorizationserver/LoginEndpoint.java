@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -18,7 +19,6 @@ import authorizationserver.dataaccess.DataAccessCriteria;
 import authorizationserver.dataaccess.DataAccessCriteria.LogicalOperator;
 import authorizationserver.dataaccess.DataAccessCriteria.Operator;
 import authorizationserver.dataaccess.DataAccessObject;
-import authorizationserver.dataaccess.jdbc.JdbcClientDataAccessObject;
 import authorizationserver.model.Client;
 
 /**
@@ -31,64 +31,67 @@ public class LoginEndpoint extends HttpServlet {
 
 	private static final long serialVersionUID = -4110790971964508374L;
 
+	private DataAccessObject<Client, Long> clientDao; // TODO set it from outside.
+
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		try {
+			RequestParameterExtractor rpe = RequestParameterExtractor.from(request);
 
-			// TODO this.authenticateRequest(request); A result of the sucessfull
-			// authentication is the returned authkey.
+			/* Validate for registered incoming client. */
+			long clientId = Long.parseLong(rpe.getClientId().orElseThrow(() -> new CouldNotVerifyClientException()));
+			if (!verifyClient(clientId)) {
+				throw new CouldNotVerifyClientException(clientId);
+			}
 
-			// Validate ClientId
+			// authKey = this.authenticateRequest(request);
+			this.authenticate(request);
 
 			/* Create authentication cookie. */
 			UUID authKey = UUID.randomUUID();
 
 			CacheAccess cacheAccess = (CacheAccess) request.getServletContext().getAttribute(Configuration.AUTH_CACHE);
-			request.getServletContext().setAttribute(Configuration.AUTH_KEY, authKey);
+			// TODO: This cannot be correct since the ServletContet is global to the vm /
+			// webb application.
+			// request.getServletContext().setAttribute(Configuration.AUTH_KEY, authKey);
+
 			cacheAccess.getAuthCache().put(authKey.toString(), AuthenticationCacheEntry.builder() //
 					.build());
 			response.addCookie(this.createAuthCookie(authKey));
 
 			AuthorizationCodeFlow authorizationCodeFlow = new AuthorizationCodeFlow();
 			authorizationCodeFlow.proceed(request, response);
-		} catch (FlowExecutionException e) {
+		} catch (FlowExecutionException | CouldNotVerifyClientException e) {
 			throw new ServletException(e);
 		}
 	}
 
-	private boolean authenticate(HttpServletRequest request) throws CouldNotVerfiyClientException {
+	private boolean authenticate(HttpServletRequest request) throws CouldNotVerifyClientException {
 		assert null != request : "Request cannot be null.";
 
-		RequestParameterExtractor extractor = RequestParameterExtractor.from(request);
+		RequestParameterExtractor rpe = RequestParameterExtractor.from(request);
 
-		if (verifyClient(extractor)) {
+		if (verifyClient(rpe)) {
 			return false;
 		}
 
 		/* Client must be registered. */
 		return false;
-
 	}
 
 	/**
 	 * Verifies the incomming {@link Client} and redirect url against the registered
 	 * {@link Client}s.
 	 * 
-	 * @param extractor
+	 * @param rpe Helper to extract valuee from the request.
 	 * @return
-	 * @throws CouldNotVerfiyClientException
 	 */
-	private boolean verifyClient(RequestParameterExtractor extractor) throws CouldNotVerfiyClientException {
-		Optional<String> clientId = extractor.getClientId();
-		if (clientId.isEmpty()) {
-			return false;
-		}
-
-		DataAccessObject<Client, Long> clientDao = new JdbcClientDataAccessObject();
+	private boolean verifyClient(long clientId) {
+		// TODO Check if criteria query works!
 		Client client = clientDao.findOneByDataAccessCriteria(DataAccessCriteria.builder() //
-				.name("externalclientid") //
-				.value(clientId.get()) //
+				.name("id") //
+				.value(clientId) //
 				.operator(Operator.EQ) //
 				.next(DataAccessCriteria.builder() //
 						.name("redirecturl") //
@@ -97,12 +100,11 @@ public class LoginEndpoint extends HttpServlet {
 						.build(), LogicalOperator.AND)
 				.build());
 
-		/* Could not verify client. */
 		if (Objects.isNull(client)) {
-			throw new CouldNotVerfiyClientException(clientId.get());
+			/* Unknown client. */
+			return false;
 		}
 
-		/* If client its registered with id and redirect url its valid. */
 		return true;
 	}
 
@@ -118,6 +120,17 @@ public class LoginEndpoint extends HttpServlet {
 		authCookie.setDomain("");
 		authCookie.setPath("/");
 		return authCookie;
+	}
+
+	/**
+	 * Finds an existing AuthCookie in the {@link HttpServletRequest}.
+	 * 
+	 * @param request
+	 * @return
+	 */
+	private Optional<Cookie> findAuthCookie(HttpServletRequest request) {
+		Stream.of(request.getCookies()) //
+				.filter(c -> c.getName().equals(Configuration.AUTH_COOKIE)).findFirst();
 	}
 
 }
