@@ -18,6 +18,8 @@ import authorizationserver.model.AuthorizationCode;
  */
 public class AuthorizationCodeFlow {
 
+private AuthenticationCache cache;
+	
 	public void proceed(HttpServletRequest request, HttpServletResponse response) throws FlowExecutionException {
 		try {
 

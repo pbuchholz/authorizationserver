@@ -1,5 +1,7 @@
 package authorizationserver;
 
+import java.util.UUID;
+
 /**
  * Thrown in case of an invalid client calling out API.
  * 
@@ -8,18 +10,18 @@ package authorizationserver;
 public class CouldNotVerifyClientException extends Exception {
 
 	private static final long serialVersionUID = 6330196500154045354L;
-	private long clientId;
+	private UUID externalClientId;
 
-	public long getClientId() {
-		return this.clientId;
+	public UUID getExternalClientId() {
+		return this.externalClientId;
 	}
 
 	public CouldNotVerifyClientException() {
 		/* Default constructor in case the client id has not been supplied. */
 	}
 
-	public CouldNotVerifyClientException(long clientId) {
-		this.clientId = clientId;
+	public CouldNotVerifyClientException(UUID externalClientId) {
+		this.externalClientId = externalClientId;
 	}
 
 }

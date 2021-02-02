@@ -86,6 +86,7 @@ public class DataAccessCriteria implements Iterable<CriteriaLink> {
 
 		public Builder start() {
 			this.first = new DataAccessCriteria();
+			this.current = this.first;
 			return this;
 		}
 

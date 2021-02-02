@@ -31,7 +31,11 @@ public class LoginEndpoint extends HttpServlet {
 
 	private static final long serialVersionUID = -4110790971964508374L;
 
-	private DataAccessObject<Client, Long> clientDao; // TODO set it from outside.
+	private DataAccessObject<Client, Long> clientDao;
+
+	public void setClientDao(DataAccessObject<Client, Long> clientDao) {
+		this.clientDao = clientDao;
+	}
 
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -39,10 +43,14 @@ public class LoginEndpoint extends HttpServlet {
 		try {
 			RequestParameterExtractor rpe = RequestParameterExtractor.from(request);
 
-			/* Validate for registered incoming client. */
-			long clientId = Long.parseLong(rpe.getClientId().orElseThrow(() -> new CouldNotVerifyClientException()));
-			if (!verifyClient(clientId)) {
-				throw new CouldNotVerifyClientException(clientId);
+			/*
+			 * Verify incoming client. The clientId represents the externalClientId
+			 * internally.
+			 */
+			UUID externalClientId = UUID
+					.fromString(rpe.getClientId().orElseThrow(() -> new CouldNotVerifyClientException()));
+			if (!verifyClient(externalClientId)) {
+				throw new CouldNotVerifyClientException(externalClientId);
 			}
 
 			// authKey = this.authenticateRequest(request);
@@ -91,11 +99,12 @@ public class LoginEndpoint extends HttpServlet {
 	 * @param rpe Helper to extract valuee from the request.
 	 * @return
 	 */
-	private boolean verifyClient(long clientId) {
+	private boolean verifyClient(UUID externalClientId) {
 		// TODO Check if criteria query works!
 		Client client = clientDao.findOneByDataAccessCriteria(DataAccessCriteria.builder() //
-				.name("id") //
-				.value(clientId) //
+				.start()//
+				.name("externalClientId") //
+				.value(externalClientId) //
 				.operator(Operator.EQ) //
 				.next(DataAccessCriteria.builder() //
 						.name("redirecturl") //
