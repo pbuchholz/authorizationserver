@@ -46,19 +46,23 @@ public class LoginEndpoint extends HttpServlet {
 			}
 
 			// authKey = this.authenticateRequest(request);
-			this.authenticate(request);
+//			this.authenticate(request); TODO: Check concept.
+			Optional<Cookie> authCookie = this.findAuthCookie(request);
+			if (authCookie.isEmpty()) {
+				CacheAccess cacheAccess = (CacheAccess) request.getServletContext()
+						.getAttribute(Configuration.AUTH_CACHE);
 
-			/* Create authentication cookie. */
-			UUID authKey = UUID.randomUUID();
+				/* Prepare new authentication. */
+				UUID authKey = UUID.randomUUID();
+				request.setAttribute(Configuration.AUTH_KEY, authKey);
+				cacheAccess.getAuthCache().put(authKey.toString(), AuthenticationCacheEntry.builder() //
+						.build());
+				response.addCookie(this.createAuthCookie(authKey));
 
-			CacheAccess cacheAccess = (CacheAccess) request.getServletContext().getAttribute(Configuration.AUTH_CACHE);
-			// TODO: This cannot be correct since the ServletContet is global to the vm /
-			// webb application.
-			// request.getServletContext().setAttribute(Configuration.AUTH_KEY, authKey);
+			} else {
+				/* Check if authentication is still valid or needs renewal. */
 
-			cacheAccess.getAuthCache().put(authKey.toString(), AuthenticationCacheEntry.builder() //
-					.build());
-			response.addCookie(this.createAuthCookie(authKey));
+			}
 
 			AuthorizationCodeFlow authorizationCodeFlow = new AuthorizationCodeFlow();
 			authorizationCodeFlow.proceed(request, response);
@@ -66,19 +70,19 @@ public class LoginEndpoint extends HttpServlet {
 			throw new ServletException(e);
 		}
 	}
-
-	private boolean authenticate(HttpServletRequest request) throws CouldNotVerifyClientException {
-		assert null != request : "Request cannot be null.";
-
-		RequestParameterExtractor rpe = RequestParameterExtractor.from(request);
-
-		if (verifyClient(rpe)) {
-			return false;
-		}
-
-		/* Client must be registered. */
-		return false;
-	}
+//
+//	private boolean authenticate(HttpServletRequest request) throws CouldNotVerifyClientException {
+//		assert null != request : "Request cannot be null.";
+//
+//		RequestParameterExtractor rpe = RequestParameterExtractor.from(request);
+//
+//		if (verifyClient(rpe)) {
+//			return false;
+//		}
+//
+//		/* Client must be registered. */
+//		return false;
+//	}
 
 	/**
 	 * Verifies the incomming {@link Client} and redirect url against the registered
@@ -129,7 +133,7 @@ public class LoginEndpoint extends HttpServlet {
 	 * @return
 	 */
 	private Optional<Cookie> findAuthCookie(HttpServletRequest request) {
-		Stream.of(request.getCookies()) //
+		return Stream.of(request.getCookies()) //
 				.filter(c -> c.getName().equals(Configuration.AUTH_COOKIE)).findFirst();
 	}
 
