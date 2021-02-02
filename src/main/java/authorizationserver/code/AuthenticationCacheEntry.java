@@ -2,6 +2,11 @@ package authorizationserver.code;
 
 import authorizationserver.model.AuthorizationCode;
 
+/**
+ * Represents an entry in the AuthenticationCache.
+ * 
+ * @author Philipp Buchholz
+ */
 public class AuthenticationCacheEntry {
 
 	private String hash;
@@ -20,7 +25,7 @@ public class AuthenticationCacheEntry {
 	}
 
 	public void setHash(String hash) {
-		this.hash =hash;
+		this.hash = hash;
 	}
 
 	public static Builder builder() {

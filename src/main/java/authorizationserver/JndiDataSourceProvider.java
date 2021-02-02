@@ -30,13 +30,15 @@ public class JndiDataSourceProvider implements DataSourceProvider {
 
 	@Override
 	public DataSource provideDataSource() {
+		// Lazy lookup of DataSource.
 		if (Objects.isNull(dataSource)) {
 			try {
 				dataSource = this.lookupDataSource();
 			} catch (NamingException e) {
 				throw new RuntimeException(e);
 			}
-			return this.dataSource;
 		}
+
+		return this.dataSource;
 	}
 }

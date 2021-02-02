@@ -15,7 +15,7 @@ public class BuildAuthorizationCodeRedirect implements FlowStep<String, Authoriz
 
 	@Override
 	public String execute(AuthorizationCode input) throws FlowExecutionException {
-		
+
 		assert null != input : "AuthorizationCode in RedirectWithAuthorizationCodeFlowStep cannot be null.";
 
 		return "?" + RequestParameters.CODE.parameterName() + //
